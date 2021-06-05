@@ -1,0 +1,221 @@
+---
+title: "TidyText"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "An introduction to text analysis in R"
+author: "Nathan Bracken"
+date: "06/02/2021"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true 
+      highlightSpans: true
+      countIncrementalSlides: false
+      keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r packages, cache=FALSE, message=FALSE}
+pacman::p_load(tidyverse, DBI, bigrquery,dbplyr, tokenizers, tidytext,stopwords)
+```
+
+# Text Analysis/Sentiment Anlysis/NLP?
+
+- Allowing Computers to work with human language 
+- String down to Binary!
+- We can identify implied meaning behind words
+- Useful for aiding in the understanding of perception
+- Different lexicons and different ways to evaluate the language
+- Different analysis levels
+
+---
+
+#Today we are focusing on TidyText
+
+- There are many other packages useful for text analysis 
+- Allows for us to text mine and use Tidyverse wrangling tools
+- Great because we are very familiar with the Dplyr wrangling methods
+
+---
+
+# Using BigQuery to Acquire Data
+
+```{r echo = TRUE, message=FALSE}
+# library(DBI, bigrquery, dbplyr)
+
+billing_id = Sys.getenv("GCE_TIDYTEXT_PROJECT_ID")
+
+books_bq_con = dbConnect(bigrquery::bigquery(),
+                project ="gdelt-bq", 
+                dataset = "internetarchivebooks",
+                billing = billing_id,
+                use_legacy_sql = FALSE)
+
+books_table_1920 = tbl(books_bq_con,'1920')
+```
+
+---
+#So Many Tables!
+
+```{r}
+dbListTables(books_bq_con)
+```
+
+---
+#Filtering
+
+```{r echo = TRUE}
+#library(tidyverse)
+text_query = books_table_1920 %>% 
+  filter(BookMeta_Language == "eng") %>% 
+  filter(grepl(BookMeta_Subjects,'poetry')) %>%
+  collect()
+```
+
+```{r}
+dbDisconnect(books_bq_con)
+```
+
+---
+
+#Creating a table
+
+```{r}
+tidy_poetry = text_query %>% 
+              select(BookMeta_Title, BookMeta_Subjects, BookMeta_FullText) 
+
+tidy_poetry
+```
+
+---
+
+#Tokenizing?
+
+```{r echo = TRUE}
+#library(tokenizers)
+tokenized_poetry = tidy_poetry %>% 
+    group_by(BookMeta_Title) %>%
+    unnest_tokens(word, BookMeta_FullText)
+```
+
+---
+
+#Tokenized Meta Text 
+
+```{r}
+tokenized_poetry
+```
+
+---
+
+#Counting Words
+
+```{r}
+##general sentiment of all poetry
+##general count of the words
+counted_poetry = tokenized_poetry %>%
+  ungroup() %>% 
+  count(word, sort = TRUE)
+counted_poetry
+```
+
+---
+
+#Count of Words by Book
+
+```{r}
+##count of words by book
+counted_poetrybook = tokenized_poetry %>% 
+  count(word, sort = TRUE)
+counted_poetrybook
+```
+
+---
+
+#Stopping Words
+
+```{r echo = TRUE}
+##library(stopwords)
+getstop_poetry = tokenized_poetry %>% 
+  anti_join(get_stopwords()) %>% 
+  count(word, sort = TRUE)
+```
+- Get_stopwords stops the reading of certain words
+- There are many different stopword methods (Snowball, SMART, marimo, etc.) 
+---
+
+#This looks a bit better
+
+```{r}
+getstop_poetry
+```
+
+---
+
+#Calculating sentiment
+
+```{r echo = TRUE}
+##library(tidyr)
+##1920 poetry sentiment 
+sentiment_1920 = getstop_poetry %>% 
+    inner_join(get_sentiments("bing"), by = "word") %>% 
+  count(BookMeta_Title, sentiment) %>% 
+  spread(sentiment, n, fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+```
+
+---
+
+#Sentiment Results Positive
+
+```{r}
+sentiment_1920 %>% arrange(desc(sentiment))
+```
+
+
+---
+
+#Sentiment Results Negative
+
+```{r}
+sentiment_1920 %>% arrange(sentiment)
+```
+
+---
+
+#Plot of Sentiment Levels
+
+```{r}
+#plot need to add labels and fix the scaling
+sentiment_plot = sentiment_1920 %>% 
+  ggplot(aes(BookMeta_Title, sentiment)) +
+        geom_bar(stat = "identity", show.legend = FALSE) + 
+        geom_text(aes(label = sentiment), vjust = 1.5) +
+        theme(axis.text.x=element_blank())
+
+sentiment_plot
+```
+
+---
+
+#Resources
+
+##Here are some useful resources if you want to get started on NLP!
+
+- Julia Silge's Github / Implementation on books by Jane Austen
+  - https://github.com/juliasilge/tidytext/
+  - https://juliasilge.github.io/tidytext/
+- Tidy Text Mining with R book
+  - https://www.tidytextmining.com/
+- String Processing Package: stringi
+  - https://stringi.gagolewski.com/
+- Tokenizers Package
+  - https://docs.ropensci.org/tokenizers/
+- CRAN Task View NLP
+  - https://cran.r-project.org/web/views/NaturalLanguageProcessing.html
+
