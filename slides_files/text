@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>TidyText</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Nathan Bracken" />
+    <meta name="date" content="2021-06-02" />
+    <script src="libs/header-attrs-2.7/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/metropolis-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# TidyText
+## An introduction to text analysis in R
+### Nathan Bracken
+### 06/02/2021
+
+---
+
+
+
+
+
+
+# Text Analysis/Sentiment Anlysis/NLP?
+
+- Allowing Computers to work with human language 
+- String down to Binary!
+- We can identify implied meaning behind words
+- Useful for aiding in the understanding of perception
+- Different lexicons and different ways to evaluate the language
+- Different analysis levels
+
+---
+
+#Today we are focusing on TidyText
+
+- There are many other packages useful for text analysis 
+- Allows for us to text mine and use Tidyverse wrangling tools
+- Great because we are very familiar with the Dplyr wrangling methods
+
+---
+
+# Using BigQuery to Acquire Data
+
+
+```r
+# library(DBI, bigrquery, dbplyr)
+
+billing_id = Sys.getenv("GCE_TIDYTEXT_PROJECT_ID")
+
+books_bq_con = dbConnect(bigrquery::bigquery(),
+                project ="gdelt-bq", 
+                dataset = "internetarchivebooks",
+                billing = billing_id,
+                use_legacy_sql = FALSE)
+
+books_table_1920 = tbl(books_bq_con,'1920')
+```
+
+---
+#So Many Tables!
+
+
+```
+##   [1] "1800"       "1801"       "1802"       "1803"       "1804"      
+##   [6] "1805"       "1806"       "1807"       "1808"       "1809"      
+##  [11] "1810"       "1811"       "1812"       "1813"       "1814"      
+##  [16] "1815"       "1816"       "1817"       "1818"       "1819"      
+##  [21] "1820"       "1821"       "1822"       "1823"       "1824"      
+##  [26] "1825"       "1826"       "1827"       "1828"       "1829"      
+##  [31] "1830"       "1831"       "1832"       "1833"       "1834"      
+##  [36] "1835"       "1836"       "1837"       "1838"       "1839"      
+##  [41] "1840"       "1841"       "1842"       "1843"       "1844"      
+##  [46] "1845"       "1846"       "1847"       "1848"       "1849"      
+##  [51] "1850"       "1851"       "1852"       "1853"       "1854"      
+##  [56] "1855"       "1856"       "1857"       "1858"       "1859"      
+##  [61] "1860"       "1861"       "1862"       "1863"       "1864"      
+##  [66] "1865"       "1866"       "1867"       "1868"       "1869"      
+##  [71] "1870"       "1871"       "1872"       "1873"       "1874"      
+##  [76] "1875"       "1876"       "1877"       "1878"       "1879"      
+##  [81] "1880"       "1881"       "1882"       "1883"       "1884"      
+##  [86] "1885"       "1886"       "1887"       "1888"       "1889"      
+##  [91] "1890"       "1891"       "1892"       "1893"       "1894"      
+##  [96] "1895"       "1896"       "1897"       "1898"       "1899"      
+## [101] "1900"       "1901"       "1902"       "1903"       "1904"      
+## [106] "1905"       "1906"       "1907"       "1908"       "1909"      
+## [111] "1910"       "1911"       "1912"       "1913"       "1914"      
+## [116] "1915"       "1916"       "1917"       "1918"       "1919"      
+## [121] "1920"       "1921"       "1922"       "1923notxt"  "1924notxt" 
+## [126] "1925notxt"  "1926notxt"  "1927notxt"  "1928notxt"  "1929notxt" 
+## [131] "1930notxt"  "1931notxt"  "1932notxt"  "1933notxt"  "1934notxt" 
+## [136] "1935notxt"  "1936notxt"  "1937notxt"  "1938notxt"  "1939notxt" 
+## [141] "1940notxt"  "1941notxt"  "1942notxt"  "1943notxt"  "1944notxt" 
+## [146] "1945notxt"  "1946notxt"  "1947notxt"  "1948notxt"  "1949notxt" 
+## [151] "1950notxt"  "1951notxt"  "1952notxt"  "1953notxt"  "1954notxt" 
+## [156] "1955notxt"  "1956notxt"  "1957notxt"  "1958notxt"  "1959notxt" 
+## [161] "1960notxt"  "1961notxt"  "1962notxt"  "1963notxt"  "1964notxt" 
+## [166] "1965notxt"  "1966notxt"  "1967notxt"  "1968notxt"  "1969notxt" 
+## [171] "1970notxt"  "1971notxt"  "1972notxt"  "1973notxt"  "1974notxt" 
+## [176] "1975notxt"  "1976notxt"  "1977noftxt" "1978notxt"  "1979notxt" 
+## [181] "1980notxt"  "1981notxt"  "1982notxt"  "1983notxt"  "1984notxt" 
+## [186] "1985notxt"  "1986notxt"  "1987notxt"  "1988notxt"  "1989notxt" 
+## [191] "1990notxt"  "1991notxt"  "1992notxt"  "1993notxt"  "1994notxt" 
+## [196] "1995notxt"  "1996notxt"  "1997notxt"  "1998notxt"  "1999notxt" 
+## [201] "2000notxt"  "2001notxt"  "2002notxt"  "2003notxt"  "2004notxt" 
+## [206] "2005notxt"  "2006notxt"  "2007notxt"  "2008notxt"  "2009notxt" 
+## [211] "2010notxt"  "2011notxt"  "2012notxt"  "2013notxt"  "2014notxt"
+```
+
+---
+#Filtering
+
+
+```r
+#library(tidyverse)
+text_query = books_table_1920 %&gt;% 
+  filter(BookMeta_Language == "eng") %&gt;% 
+  filter(grepl(BookMeta_Subjects,'poetry')) %&gt;%
+  collect()
+```
+
+
+
+---
+
+#Creating a table
+
+
+```
+## # A tibble: 102 x 3
+##    BookMeta_Title           BookMeta_Subjects       BookMeta_FullText           
+##    &lt;chr&gt;                    &lt;chr&gt;                   &lt;chr&gt;                       
+##  1 Hispanic anthology;      Spanish poetry          " Google This is a digital …
+##  2 Others for 1919; an ant… Imagist poetry          " Google This is a digital …
+##  3 Naturalism in English p… English poetry;Natural… " Google This is a digital …
+##  4 An anthology of recent … English poetry          " Google This is a digital …
+##  5 The book of humorous ve… Humorous poetry, Engli… " Google This is a digital …
+##  6 American &amp; British vers… American poetry;Englis… " This is a digital copy of…
+##  7 Icarian flights; transl… Horace;Laudatory poetr… " Google This is a digital …
+##  8 Naturalism in English p… English poetry;Natural… " Google This is a digital …
+##  9 Hispanic anthology;      Spanish poetry          " Google This is a digital …
+## 10 An anthology of Jugosla… Serbian poetry;Folk so… " This is a digital copy of…
+## # … with 92 more rows
+```
+
+---
+
+#Tokenizing?
+
+
+```r
+#library(tokenizers)
+tokenized_poetry = tidy_poetry %&gt;% 
+    group_by(BookMeta_Title) %&gt;%
+    unnest_tokens(word, BookMeta_FullText)
+```
+
+---
+
+#Tokenized Meta Text 
+
+
+```
+## # A tibble: 1,389,941 x 2
+## # Groups:   BookMeta_Title [28]
+##    BookMeta_Title      word   
+##    &lt;chr&gt;               &lt;chr&gt;  
+##  1 Hispanic anthology; google 
+##  2 Hispanic anthology; this   
+##  3 Hispanic anthology; is     
+##  4 Hispanic anthology; a      
+##  5 Hispanic anthology; digital
+##  6 Hispanic anthology; copy   
+##  7 Hispanic anthology; of     
+##  8 Hispanic anthology; a      
+##  9 Hispanic anthology; book   
+## 10 Hispanic anthology; that   
+## # … with 1,389,931 more rows
+```
+
+---
+
+#Counting Words
+
+
+```
+## # A tibble: 65,730 x 2
+##    word      n
+##    &lt;chr&gt; &lt;int&gt;
+##  1 the   86745
+##  2 and   50971
+##  3 of    45939
+##  4 a     29313
+##  5 in    26958
+##  6 to    26077
+##  7 i     16199
+##  8 is    15506
+##  9 that  13231
+## 10 it    11622
+## # … with 65,720 more rows
+```
+
+---
+
+#Count of Words by Book
+
+
+```
+## # A tibble: 184,500 x 3
+## # Groups:   BookMeta_Title [28]
+##    BookMeta_Title                              word      n
+##    &lt;chr&gt;                                       &lt;chr&gt; &lt;int&gt;
+##  1 Naturalism in English poetry                the   11897
+##  2 The book of humorous verse                  the   11150
+##  3 Hispanic anthology;                         the    9296
+##  4 The torch, and other lectures and addresses the    8488
+##  5 Naturalism in English poetry                of     8174
+##  6 The book of humorous verse                  and    7954
+##  7 Naturalism in English poetry                and    6746
+##  8 Studies of contemporary poets               the    6371
+##  9 The book of humorous verse                  a      6135
+## 10 The torch, and other lectures and addresses of     5940
+## # … with 184,490 more rows
+```
+
+---
+
+#Stopping Words
+
+
+```r
+##library(stopwords)
+getstop_poetry = tokenized_poetry %&gt;% 
+  anti_join(get_stopwords()) %&gt;% 
+  count(word, sort = TRUE)
+```
+
+```
+## Joining, by = "word"
+```
+- Get_stopwords stops the reading of certain words
+- There are many different stopword methods (Snowball, SMART, marimo, etc.) 
+---
+
+#This looks a bit better
+
+
+```
+## # A tibble: 180,699 x 3
+## # Groups:   BookMeta_Title [28]
+##    BookMeta_Title                                                 word         n
+##    &lt;chr&gt;                                                          &lt;chr&gt;    &lt;int&gt;
+##  1 Hispanic anthology;                                            hispanic  1462
+##  2 Naturalism in English poetry                                   poetry    1137
+##  3 Hispanic anthology;                                            iv        1011
+##  4 Hispanic anthology;                                            de         950
+##  5 Instigations of Ezra Pound, together with an essay on the Chi… de         861
+##  6 Hispanic anthology;                                            thy        754
+##  7 Naturalism in English poetry                                   nature     747
+##  8 Hispanic anthology;                                            notes      711
+##  9 Hispanic anthology;                                            monogra…   646
+## 10 The book of humorous verse                                     one        643
+## # … with 180,689 more rows
+```
+
+---
+
+#Calculating sentiment
+
+
+```r
+##library(tidyr)
+##1920 poetry sentiment 
+sentiment_1920 = getstop_poetry %&gt;% 
+    inner_join(get_sentiments("bing"), by = "word") %&gt;% 
+  count(BookMeta_Title, sentiment) %&gt;% 
+  spread(sentiment, n, fill = 0) %&gt;% 
+  mutate(sentiment = positive - negative)
+```
+
+---
+
+#Sentiment Results Positive
+
+
+```
+## # A tibble: 28 x 4
+## # Groups:   BookMeta_Title [28]
+##    BookMeta_Title                                    negative positive sentiment
+##    &lt;chr&gt;                                                &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+##  1 Fairies and chimneys                                    56       79        23
+##  2 Little-folk lyrics                                     132      149        17
+##  3 Lillygay : an anthology of anonymous poems              41       49         8
+##  4 A child's garden of verses                             110      109        -1
+##  5 The secret rose garden of Sad ud din Mahmud Shab…      189      167       -22
+##  6 The garden of bright waters;                           211      179       -32
+##  7 An anthology of recent poetry                          287      240       -47
+##  8 The garden of bright waters; one hundred and twe…      204      153       -51
+##  9 American &amp; British verse from the Yale review          221      134       -87
+## 10 American &amp; British verse from the Yale review;         229      142       -87
+## # … with 18 more rows
+```
+
+
+---
+
+#Sentiment Results Negative
+
+
+```
+## # A tibble: 28 x 4
+## # Groups:   BookMeta_Title [28]
+##    BookMeta_Title                                    negative positive sentiment
+##    &lt;chr&gt;                                                &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+##  1 "The book of humorous verse"                          1588      820      -768
+##  2 "Instigations of Ezra Pound, together with an es…      994      640      -354
+##  3 "Hispanic anthology;"                                  970      617      -353
+##  4 "Studies of contemporary poets"                       1008      705      -303
+##  5 "Naturalism in English poetry"                         867      601      -266
+##  6 "Others for 1919; an anthology of the new verse"       545      319      -226
+##  7 "Georgian poetry, 1911-1912"                           582      357      -225
+##  8 "Contemporary verse anthology; favorite poems se…      575      365      -210
+##  9 "Georgian poetry, 1918-1919"                           470      260      -210
+## 10 "A miscellany of American poetry 1920"                 413      230      -183
+## # … with 18 more rows
+```
+
+---
+
+#Plot of Sentiment Levels
+
+![](slides_files/figure-html/unnamed-chunk-15-1.png)&lt;!-- --&gt;
+
+---
+
+#Resources
+
+##Here are some useful resources if you want to get started on NLP!
+
+- Julia Silge's Github / Implementation on books by Jane Austen
+  - https://github.com/juliasilge/tidytext/
+  - https://juliasilge.github.io/tidytext/
+- Tidy Text Mining with R book
+  - https://www.tidytextmining.com/
+- String Processing Package: stringi
+  - https://stringi.gagolewski.com/
+- Tokenizers Package
+  - https://docs.ropensci.org/tokenizers/
+- CRAN Task View NLP
+  - https://cran.r-project.org/web/views/NaturalLanguageProcessing.html
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"highlightSpans": true,
+"countIncrementalSlides": false,
+"keep_md": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
